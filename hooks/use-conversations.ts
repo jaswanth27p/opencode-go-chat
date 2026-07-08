@@ -64,6 +64,7 @@ export function useCreateConversation() {
           ],
         };
       });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEY });
     },
   });
 }
