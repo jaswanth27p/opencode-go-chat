@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Settings, User, Command } from "lucide-react";
+import { LayoutDashboard, Settings, User, Command, MessageSquare, FlaskConical } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -17,11 +17,14 @@ import {
 } from "@/components/ui/sidebar";
 import { NavUser } from "@/components/global/nav-user";
 import { ThemeToggle } from "@/components/global/theme-toggle";
+import { ConversationList } from "@/components/global/conversation-list";
 import { useUiStore } from "@/store/use-ui-store";
 import type { PublicUser } from "@/types/user";
 
 const NAV_ITEMS = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+  { title: "Chat", url: "/chat", icon: MessageSquare },
+  { title: "Playground", url: "/playground", icon: FlaskConical },
   { title: "Settings", url: "/settings", icon: Settings },
   { title: "Profile", url: "/profile", icon: User },
 ];
@@ -52,7 +55,7 @@ export function AppSidebar({
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="flex min-h-0 flex-1 flex-col">
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -80,6 +83,7 @@ export function AppSidebar({
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+        <ConversationList />
       </SidebarContent>
       <SidebarFooter>
         <div className="flex items-center justify-between gap-2 px-1 group-data-[collapsible=icon]:flex-col">
