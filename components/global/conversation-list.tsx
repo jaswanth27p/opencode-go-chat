@@ -86,7 +86,14 @@ function ConversationRow({ thread }: { thread: ConversationThread }) {
           <MoreHorizontal className="size-3.5" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onSelect={() => setEditing(true)}>Rename</DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={() => {
+              setTitle(thread.title ?? "");
+              setEditing(true);
+            }}
+          >
+            Rename
+          </DropdownMenuItem>
           <DropdownMenuItem
             onSelect={() => {
               remove.mutate({ threadId: thread.id });
@@ -107,6 +114,7 @@ function ConversationRow({ thread }: { thread: ConversationThread }) {
 export function ConversationList() {
   const query = useConversations();
   const sentinelRef = React.useRef<HTMLDivElement | null>(null);
+  const { fetchNextPage, hasNextPage, isFetchingNextPage } = query;
 
   React.useEffect(() => {
     const node = sentinelRef.current;
@@ -115,15 +123,15 @@ export function ConversationList() {
     }
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0]?.isIntersecting && query.hasNextPage && !query.isFetchingNextPage) {
-          query.fetchNextPage();
+        if (entries[0]?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
         }
       },
       { rootMargin: "64px" }
     );
     observer.observe(node);
     return () => observer.disconnect();
-  }, [query]);
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   const threads = query.data?.pages.flatMap((page) => page.threads) ?? [];
 
