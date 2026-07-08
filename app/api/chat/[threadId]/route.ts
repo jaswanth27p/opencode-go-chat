@@ -1,0 +1,126 @@
+import { handleChatStream } from "@mastra/ai-sdk";
+import {
+  createUIMessageStream,
+  createUIMessageStreamResponse,
+  type UIMessage,
+  type UIMessageChunk,
+} from "ai";
+import { NextResponse } from "next/server";
+import { RequestContext } from "@mastra/core/request-context";
+import { requireUser } from "@/lib/session";
+import { mastra } from "@/mastra";
+import { DEFAULT_MODEL, getModel } from "@/mastra/models";
+
+type Modality = "image" | "audio" | "video";
+
+function blockedModality(
+  message: UIMessage | undefined,
+  model: ReturnType<typeof getModel>
+): Modality | null {
+  if (!message) {
+    return null;
+  }
+  for (const part of message.parts) {
+    if (part.type !== "file") {
+      continue;
+    }
+    const mediaType = part.mediaType ?? "";
+    if (mediaType.startsWith("image/") && !model.supportsImage) {
+      return "image";
+    }
+    if (mediaType.startsWith("audio/") && !model.supportsAudio) {
+      return "audio";
+    }
+    if (mediaType.startsWith("video/") && !model.supportsVideo) {
+      return "video";
+    }
+  }
+  return null;
+}
+
+export async function POST(
+  req: Request,
+  { params }: { params: Promise<{ threadId: string }> }
+) {
+  const user = await requireUser();
+  const { threadId } = await params;
+
+  const agent = mastra.getAgentById("assistant-agent");
+  const memory = await agent.getMemory();
+  if (!memory) {
+    return NextResponse.json({ error: "Memory not configured" }, { status: 500 });
+  }
+
+  const thread = await memory.getThreadById({ threadId });
+  if (!thread || thread.resourceId !== user.id) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  const body = await req.json();
+  const messages = body.messages as UIMessage[];
+  const modelId = typeof body.model === "string" ? body.model : DEFAULT_MODEL;
+  const model = getModel(modelId);
+
+  const lastUserMessage = [...messages].reverse().find((m) => m.role === "user");
+  const blocked = blockedModality(lastUserMessage, model);
+
+  if (blocked) {
+    const stream = createUIMessageStream({
+      execute: async ({ writer }) => {
+        const id = "blocked-modality";
+        writer.write({ type: "text-start", id });
+        writer.write({
+          type: "text-delta",
+          id,
+          delta: `${model.label} can't read ${blocked} attachments. Remove it or switch to a different model.`,
+        });
+        writer.write({ type: "text-end", id });
+      },
+    });
+    return createUIMessageStreamResponse({ stream });
+  }
+
+  const requestContext = new RequestContext();
+  requestContext.set("model", modelId);
+
+  const handleChatError = (error: unknown): string => {
+    console.error("[chat]", error);
+    return "Something went wrong talking to the model. Try again or pick a different model.";
+  };
+
+  const buildMessageMetadata = ({
+    part,
+  }: {
+    part: { type: string; totalUsage?: unknown };
+  }) => {
+    if (part.type === "finish") {
+      return { model: modelId, usage: part.totalUsage };
+    }
+  };
+
+  // `@mastra/ai-sdk` (1.6.1) ships its own vendored snapshot of the AI SDK
+  // v5/v6 UI message & stream-chunk types (`@internal/ai-sdk-v5` and
+  // `@internal/ai-v6`), which don't structurally match the `ai` package
+  // actually installed in this project (`ai@7.0.16`): it adds a `custom`
+  // UIMessagePart variant neither vendored snapshot has, uses a different
+  // `ProviderMetadata` shape, and widens `finishReason` to include
+  // `"unknown"`. At runtime both sides exchange the same AI SDK UI-message
+  // JSON; only the two packages' independently generated `.d.ts` snapshots
+  // disagree. `onError` and `messageMetadata` are declared above with
+  // explicit types so our own logic stays type-checked; only this call's
+  // argument and its return value cross the mismatched boundary.
+  const chatStream = (await handleChatStream({
+    mastra,
+    agentId: "assistant-agent",
+    params: {
+      messages,
+      memory: { thread: threadId, resource: user.id },
+      requestContext,
+    },
+    onError: handleChatError,
+    messageMetadata: buildMessageMetadata,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- bridges vendored type-declaration skew, see comment above
+  } as any)) as unknown as ReadableStream<UIMessageChunk>;
+
+  return createUIMessageStreamResponse({ stream: chatStream });
+}
