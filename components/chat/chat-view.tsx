@@ -105,6 +105,11 @@ export function ChatView({
   }, [model]);
 
   const activeThreadId = threadId ?? "pending";
+  const threadIdRef = React.useRef(activeThreadId);
+
+  React.useEffect(() => {
+    threadIdRef.current = activeThreadId;
+  }, [activeThreadId]);
 
   const { messages, sendMessage, status } = useChat({
     id: activeThreadId,
@@ -112,6 +117,12 @@ export function ChatView({
     transport: new DefaultChatTransport({
       api: `/api/chat/${activeThreadId}`,
       body: () => ({ model: modelRef.current }),
+      prepareSendMessagesRequest: ({ body, headers, credentials }) => ({
+        api: `/api/chat/${threadIdRef.current}`,
+        body: { ...body },
+        headers,
+        credentials,
+      }),
     }),
   });
 
@@ -124,6 +135,7 @@ export function ChatView({
     if (!targetThreadId) {
       const created = await createConversation.mutateAsync();
       targetThreadId = created.id;
+      threadIdRef.current = targetThreadId;
       router.push(`/chat/${targetThreadId}`);
     }
 
