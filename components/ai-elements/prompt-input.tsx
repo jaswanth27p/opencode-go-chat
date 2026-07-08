@@ -1262,10 +1262,39 @@ export const PromptInputSubmit = ({
   );
 };
 
-export type PromptInputSelectProps = ComponentProps<typeof Select>;
+type PromptInputSelectChangeEventDetails = Parameters<
+  NonNullable<ComponentProps<typeof Select>["onValueChange"]>
+>[1];
 
-export const PromptInputSelect = (props: PromptInputSelectProps) => (
-  <Select {...props} />
+export type PromptInputSelectProps = Omit<
+  ComponentProps<typeof Select>,
+  "value" | "defaultValue" | "onValueChange" | "multiple"
+> & {
+  value?: string | null;
+  defaultValue?: string | null;
+  multiple?: false;
+  onValueChange?: (
+    value: string,
+    eventDetails: PromptInputSelectChangeEventDetails
+  ) => void;
+};
+
+export const PromptInputSelect = ({
+  onValueChange,
+  ...props
+}: PromptInputSelectProps) => (
+  <Select<string, false>
+    onValueChange={
+      onValueChange
+        ? (value, eventDetails) => {
+            if (value !== null) {
+              onValueChange(value, eventDetails);
+            }
+          }
+        : undefined
+    }
+    {...props}
+  />
 );
 
 export type PromptInputSelectTriggerProps = ComponentProps<
