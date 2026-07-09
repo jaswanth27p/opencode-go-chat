@@ -1,8 +1,8 @@
 import { RequestContext } from "@mastra/core/request-context";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { playgroundInputSchema } from "@/lib/validations/playground";
 import { requireUser } from "@/lib/session";
 import { mastra } from "@/mastra";
-import { DEFAULT_MODEL } from "@/mastra/models";
 
 const USAGE_MARKER = "\n\n<<usage>>";
 
@@ -17,27 +17,40 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json();
-  const prompt = typeof body.prompt === "string" ? body.prompt.trim() : "";
-  if (!prompt) {
-    return new Response("prompt is required", { status: 400 });
+  const parseResult = playgroundInputSchema.safeParse(body);
+  if (!parseResult.success) {
+    return new Response(parseResult.error.issues[0]?.message ?? "Invalid input", { status: 400 });
   }
 
-  const modelId = typeof body.model === "string" ? body.model : DEFAULT_MODEL;
+  const {
+    prompt,
+    model: modelId,
+    systemPrompt,
+    temperature,
+    maxTokens,
+    topP,
+    topK,
+    presencePenalty,
+    frequencyPenalty,
+    seed,
+    stopSequences,
+  } = parseResult.data;
+
   const requestContext = new RequestContext();
   requestContext.set("model", modelId);
 
   const modelSettings: Record<string, unknown> = {};
-  if (typeof body.temperature === "number") modelSettings.temperature = body.temperature;
-  if (typeof body.maxOutputTokens === "number") modelSettings.maxOutputTokens = body.maxOutputTokens;
-  if (typeof body.topP === "number") modelSettings.topP = body.topP;
-  if (typeof body.topK === "number") modelSettings.topK = body.topK;
-  if (typeof body.presencePenalty === "number") modelSettings.presencePenalty = body.presencePenalty;
-  if (typeof body.frequencyPenalty === "number") modelSettings.frequencyPenalty = body.frequencyPenalty;
-  if (typeof body.seed === "number") modelSettings.seed = body.seed;
-  if (typeof body.stopSequences === "string" && body.stopSequences.trim()) {
-    modelSettings.stopSequences = body.stopSequences
+  if (temperature !== undefined) modelSettings.temperature = temperature;
+  if (maxTokens !== undefined) modelSettings.maxTokens = maxTokens;
+  if (topP !== undefined) modelSettings.topP = topP;
+  if (topK !== undefined) modelSettings.topK = topK;
+  if (presencePenalty !== undefined) modelSettings.presencePenalty = presencePenalty;
+  if (frequencyPenalty !== undefined) modelSettings.frequencyPenalty = frequencyPenalty;
+  if (seed !== undefined) modelSettings.seed = seed;
+  if (stopSequences?.trim()) {
+    modelSettings.stopSequences = stopSequences
       .split(",")
-      .map((s: string) => s.trim())
+      .map((s) => s.trim())
       .filter(Boolean);
   }
 
@@ -45,10 +58,7 @@ export async function POST(req: Request) {
 
   try {
     const result = await agent.stream(prompt, {
-      instructions:
-        typeof body.systemPrompt === "string" && body.systemPrompt.trim()
-          ? body.systemPrompt
-          : undefined,
+      instructions: systemPrompt?.trim() ? systemPrompt : undefined,
       requestContext,
       modelSettings,
     });
