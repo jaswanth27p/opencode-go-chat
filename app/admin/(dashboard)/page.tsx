@@ -5,7 +5,11 @@ import { getOverviewStats } from "@/lib/admin/observability";
 export default async function AdminOverviewPage() {
   const stats = await getOverviewStats();
   const errorRate =
-    stats.tracesLast24h === 0 ? 0 : Math.round((stats.errorsLast24h / stats.tracesLast24h) * 100);
+    stats.tracesLast24h === null || stats.errorsLast24h === null
+      ? null
+      : stats.tracesLast24h === 0
+        ? 0
+        : Math.round((stats.errorsLast24h / stats.tracesLast24h) * 100);
 
   return (
     <div className="flex flex-col gap-4">
@@ -14,25 +18,49 @@ export default async function AdminOverviewPage() {
           <CardHeader>
             <CardTitle className="text-muted-foreground text-sm font-normal">Conversations</CardTitle>
           </CardHeader>
-          <CardContent className="text-2xl font-semibold">{stats.totalConversations}</CardContent>
+          <CardContent className="text-2xl font-semibold">
+            {stats.totalConversations === null ? (
+              <span className="text-muted-foreground text-base">Unavailable</span>
+            ) : (
+              stats.totalConversations
+            )}
+          </CardContent>
         </Card>
         <Card>
           <CardHeader>
             <CardTitle className="text-muted-foreground text-sm font-normal">Messages</CardTitle>
           </CardHeader>
-          <CardContent className="text-2xl font-semibold">{stats.totalMessages}</CardContent>
+          <CardContent className="text-2xl font-semibold">
+            {stats.totalMessages === null ? (
+              <span className="text-muted-foreground text-base">Unavailable</span>
+            ) : (
+              stats.totalMessages
+            )}
+          </CardContent>
         </Card>
         <Card>
           <CardHeader>
             <CardTitle className="text-muted-foreground text-sm font-normal">Runs (24h)</CardTitle>
           </CardHeader>
-          <CardContent className="text-2xl font-semibold">{stats.tracesLast24h}</CardContent>
+          <CardContent className="text-2xl font-semibold">
+            {stats.tracesLast24h === null ? (
+              <span className="text-muted-foreground text-base">Unavailable</span>
+            ) : (
+              stats.tracesLast24h
+            )}
+          </CardContent>
         </Card>
         <Card>
           <CardHeader>
             <CardTitle className="text-muted-foreground text-sm font-normal">Error rate (24h)</CardTitle>
           </CardHeader>
-          <CardContent className="text-2xl font-semibold">{errorRate}%</CardContent>
+          <CardContent className="text-2xl font-semibold">
+            {errorRate === null ? (
+              <span className="text-muted-foreground text-base">Unavailable</span>
+            ) : (
+              `${errorRate}%`
+            )}
+          </CardContent>
         </Card>
       </div>
 
