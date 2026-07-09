@@ -1,4 +1,5 @@
 import { RequestContext } from "@mastra/core/request-context";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { requireUser } from "@/lib/session";
 import { mastra } from "@/mastra";
 import { DEFAULT_MODEL } from "@/mastra/models";
@@ -6,7 +7,14 @@ import { DEFAULT_MODEL } from "@/mastra/models";
 const USAGE_MARKER = "\n\n<<usage>>";
 
 export async function POST(req: Request) {
-  await requireUser();
+  const user = await requireUser();
+  const rateLimit = await checkRateLimit(user.id, "playground");
+  if (!rateLimit.allowed) {
+    return new Response("Rate limit exceeded. Try again shortly.", {
+      status: 429,
+      headers: { "Retry-After": String(rateLimit.resetSeconds), "Content-Type": "text/plain; charset=utf-8" },
+    });
+  }
 
   const body = await req.json();
   const prompt = typeof body.prompt === "string" ? body.prompt.trim() : "";

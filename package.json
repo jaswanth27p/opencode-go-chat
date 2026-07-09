@@ -38,6 +38,7 @@
     "date-fns": "^4.4.0",
     "embla-carousel-react": "^8.6.0",
     "input-otp": "^1.4.2",
+    "ioredis": "^5.11.1",
     "jose": "^6.2.3",
     "lucide-react": "^1.23.0",
     "media-chrome": "^4.19.2",

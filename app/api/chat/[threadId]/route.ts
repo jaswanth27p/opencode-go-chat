@@ -7,6 +7,7 @@ import {
 } from "ai";
 import { NextResponse } from "next/server";
 import { RequestContext } from "@mastra/core/request-context";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { requireUser } from "@/lib/session";
 import { mastra } from "@/mastra";
 import { DEFAULT_MODEL, getModel } from "@/mastra/models";
@@ -43,6 +44,13 @@ export async function POST(
   { params }: { params: Promise<{ threadId: string }> }
 ) {
   const user = await requireUser();
+  const rateLimit = await checkRateLimit(user.id, "chat");
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: "Rate limit exceeded. Try again shortly." },
+      { status: 429, headers: { "Retry-After": String(rateLimit.resetSeconds) } }
+    );
+  }
   const { threadId } = await params;
 
   const agent = mastra.getAgentById("assistant-agent");
