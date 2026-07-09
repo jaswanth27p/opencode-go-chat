@@ -14,7 +14,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
 
 const NAV_ITEMS = [
   { title: "Overview", url: "/admin", icon: LayoutDashboard },
@@ -59,18 +58,21 @@ export function AdminSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-        <Button
-          className="w-full justify-start gap-2"
-          onClick={async () => {
-            await fetch("/api/admin/logout", { method: "POST" });
-            router.push("/admin/login");
-            router.refresh();
-          }}
-          variant="ghost"
-        >
-          <LogOut className="size-4" />
-          Sign out
-        </Button>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              tooltip="Sign out"
+              onClick={async () => {
+                await fetch("/api/admin/logout", { method: "POST" });
+                router.push("/admin/login");
+                router.refresh();
+              }}
+            >
+              <LogOut className="size-4" />
+              <span>Sign out</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
   );
