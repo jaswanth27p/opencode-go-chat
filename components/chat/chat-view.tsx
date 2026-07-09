@@ -3,7 +3,8 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport, type UIMessage } from "ai";
+import { DefaultChatTransport, type FileUIPart, type UIMessage } from "ai";
+import { nanoid } from "nanoid";
 import { toast } from "sonner";
 import {
   Conversation,
@@ -35,7 +36,7 @@ import {
 import { ModelSelect } from "@/components/chat/model-select";
 import { Button } from "@/components/ui/button";
 import { useCreateConversation } from "@/hooks/use-conversations";
-import { DEFAULT_MODEL, getModel } from "@/mastra/models";
+import { DEFAULT_MODEL, getModel, modelSupportsMediaType } from "@/mastra/models";
 
 const MODEL_STORAGE_KEY = "chat:last-model";
 
@@ -82,6 +83,22 @@ function renderMessageParts(message: UIMessage) {
   });
 }
 
+function buildOptimisticUserMessage(text: string, files: FileUIPart[]): UIMessage {
+  const parts: UIMessage["parts"] = [];
+  if (text.trim()) {
+    parts.push({ type: "text", text });
+  }
+  for (const file of files) {
+    parts.push(file);
+  }
+  return {
+    id: `optimistic-${nanoid()}`,
+    role: "user",
+    parts,
+    createdAt: new Date(),
+  } as UIMessage;
+}
+
 export function ChatView({
   threadId,
   initialMessages,
@@ -92,6 +109,8 @@ export function ChatView({
   const router = useRouter();
   const createConversation = useCreateConversation();
   const [model, setModel] = React.useState(DEFAULT_MODEL);
+  const [optimisticUserMessage, setOptimisticUserMessage] = React.useState<UIMessage | null>(null);
+  const [isCreatingThread, setIsCreatingThread] = React.useState(false);
   const modelRef = React.useRef(model);
   modelRef.current = model;
 
@@ -137,12 +156,24 @@ export function ChatView({
   });
 
   const handleSubmit = async (message: PromptInputMessage) => {
-    if (!message.text.trim() && message.files.length === 0) {
-      return;
+    if (!message.text.trim() && message.files.length === 0) return;
+
+    const modelObj = getModel(model);
+    for (const file of message.files) {
+      if (!modelSupportsMediaType(modelObj, file.mediaType ?? "")) {
+        toast.error(
+          `${modelObj.label} doesn't support ${file.mediaType ?? "this"} attachments.`
+        );
+        return;
+      }
     }
 
     let targetThreadId = threadId;
     if (!targetThreadId) {
+      setOptimisticUserMessage(
+        buildOptimisticUserMessage(message.text, message.files as FileUIPart[])
+      );
+      setIsCreatingThread(true);
       try {
         const created = await createConversation.mutateAsync();
         targetThreadId = created.id;
@@ -150,8 +181,11 @@ export function ChatView({
         router.push(`/chat/${targetThreadId}`);
       } catch {
         toast.error("Couldn't start a new conversation. Try again.");
-        throw new Error("conversation creation failed");
+        setIsCreatingThread(false);
+        return;
       }
+      setIsCreatingThread(false);
+      setOptimisticUserMessage(null);
     }
 
     sendMessage({ text: message.text, files: message.files });
@@ -161,27 +195,47 @@ export function ChatView({
     <div className="flex h-full min-h-0 flex-col gap-4">
       <Conversation>
         <ConversationContent>
-          {messages.length === 0 ? (
+          {messages.length === 0 && !optimisticUserMessage ? (
             <ConversationEmptyState
               description="Ask anything — switch models any time from the composer."
               title="Start a conversation"
             />
           ) : (
-            messages.map((message) => (
-              <Message from={message.role} key={message.id}>
-                <MessageContent>{renderMessageParts(message)}</MessageContent>
-                {message.role === "assistant" &&
-                  typeof message.metadata === "object" &&
-                  message.metadata !== null &&
-                  "usage" in message.metadata && (
-                    <div className="text-muted-foreground text-xs">
-                      {getModel(String((message.metadata as { model?: string }).model ?? DEFAULT_MODEL)).label}
-                      {" · "}
-                      {(message.metadata as { usage?: { totalTokens?: number } }).usage?.totalTokens ?? 0} tokens
+            <>
+              {optimisticUserMessage && (
+                <Message from="user" key={optimisticUserMessage.id}>
+                  <MessageContent>{renderMessageParts(optimisticUserMessage)}</MessageContent>
+                </Message>
+              )}
+              {messages.map((message) => (
+                <Message from={message.role} key={message.id}>
+                  <MessageContent>{renderMessageParts(message)}</MessageContent>
+                  {message.role === "assistant" &&
+                    typeof message.metadata === "object" &&
+                    message.metadata !== null &&
+                    "usage" in message.metadata && (
+                      <div className="text-muted-foreground text-xs">
+                        {getModel(String((message.metadata as { model?: string }).model ?? DEFAULT_MODEL)).label}
+                        {" · "}
+                        {(message.metadata as { usage?: { totalTokens?: number } }).usage?.totalTokens ?? 0} tokens
+                      </div>
+                    )}
+                </Message>
+              ))}
+              {(status === "submitted" || status === "streaming") && (
+                <Message from="assistant" key="assistant-loading">
+                  <MessageContent>
+                    <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                      <span className="relative flex size-2">
+                        <span className="absolute inline-flex size-full animate-ping rounded-full bg-primary opacity-75" />
+                        <span className="relative inline-flex size-2 rounded-full bg-primary" />
+                      </span>
+                      {status === "submitted" ? "Thinking…" : "Generating…"}
                     </div>
-                  )}
-              </Message>
-            ))
+                  </MessageContent>
+                </Message>
+              )}
+            </>
           )}
         </ConversationContent>
         <ConversationScrollButton />
@@ -217,7 +271,7 @@ export function ChatView({
             </PromptInputActionMenu>
             <ModelSelect onChange={setModel} value={model} />
           </PromptInputTools>
-          <PromptInputSubmit status={status} />
+          <PromptInputSubmit disabled={isCreatingThread} status={status} />
         </PromptInputFooter>
       </PromptInput>
     </div>
