@@ -7,7 +7,15 @@ const REDIS_KEY_PREFIX = process.env.REDIS_KEY_PREFIX ?? "opencode-go-chat:";
 
 const redis =
   globalForRedis.redis ??
-  new Redis(process.env.REDIS_URL as string, { keyPrefix: REDIS_KEY_PREFIX });
+  new Redis(process.env.REDIS_URL as string, {
+    keyPrefix: REDIS_KEY_PREFIX,
+    lazyConnect: true,
+    maxRetriesPerRequest: 1,
+  });
+
+redis.on("error", (error) => {
+  console.error("[rate-limit] Redis connection error:", error);
+});
 
 if (process.env.NODE_ENV !== "production") {
   globalForRedis.redis = redis;

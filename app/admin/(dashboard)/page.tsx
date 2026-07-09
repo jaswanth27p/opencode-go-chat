@@ -7,6 +7,8 @@ import { LatencyTrendChart } from "@/components/admin/latency-trend-chart";
 import { MessagesChart } from "@/components/admin/messages-chart";
 import { getOverviewStats } from "@/lib/admin/observability";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminOverviewPage() {
   const stats = await getOverviewStats();
   const errorRate =
