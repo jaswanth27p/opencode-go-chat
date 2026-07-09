@@ -10,7 +10,20 @@ const redis =
   new Redis(process.env.REDIS_URL as string, {
     keyPrefix: REDIS_KEY_PREFIX,
     lazyConnect: true,
-    maxRetriesPerRequest: 1,
+    maxRetriesPerRequest: 3,
+    connectTimeout: 10000,
+    keepAlive: 30000,
+    retryStrategy(times) {
+      if (times > 10) {
+        console.error(`[rate-limit] Redis: giving up after ${times} retries`);
+        return null;
+      }
+      return Math.min(times * 300, 3000);
+    },
+    reconnectOnError(err) {
+      const reconnectCodes = ["ECONNRESET", "ETIMEDOUT", "ECONNREFUSED", "EPIPE"];
+      return reconnectCodes.some((code) => err.message.includes(code));
+    },
   });
 
 redis.on("error", (error) => {
