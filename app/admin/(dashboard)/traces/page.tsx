@@ -10,7 +10,7 @@ export default async function AdminTracesPage({
   searchParams: Promise<{ page?: string }>;
 }) {
   const { page: pageParam } = await searchParams;
-  const page = Number(pageParam ?? "0") || 0;
+  const page = Math.max(0, Number(pageParam ?? "0") || 0);
 
   const observability = await getObservabilityStore();
   const result = observability
