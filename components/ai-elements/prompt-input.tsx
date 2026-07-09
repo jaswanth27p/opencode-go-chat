@@ -74,6 +74,14 @@ import {
   useState,
 } from "react";
 
+type DropdownMenuItemSelectEvent = Parameters<
+  NonNullable<ComponentProps<typeof DropdownMenuItem>["onSelect"]>
+>[0];
+
+type InputGroupButtonClickEvent = Parameters<
+  NonNullable<ComponentProps<typeof InputGroupButton>["onClick"]>
+>[0];
+
 // ============================================================================
 // Helpers
 // ============================================================================
@@ -414,10 +422,6 @@ export type PromptInputActionAddAttachmentsProps = ComponentProps<
   label?: string;
 };
 
-type DropdownMenuItemSelectEvent = Parameters<
-  NonNullable<ComponentProps<typeof DropdownMenuItem>["onSelect"]>
->[0];
-
 export const PromptInputActionAddAttachments = ({
   label = "Add photos or files",
   ...props
@@ -425,8 +429,8 @@ export const PromptInputActionAddAttachments = ({
   const attachments = usePromptInputAttachments();
 
   const handleSelect = useCallback(
-    (e: DropdownMenuItemSelectEvent) => {
-      e.preventDefault();
+    (event: DropdownMenuItemSelectEvent) => {
+      event.preventDefault();
       attachments.openFileDialog();
     },
     [attachments]
@@ -1236,13 +1240,13 @@ export const PromptInputSubmit = ({
   }
 
   const handleClick = useCallback(
-    (e: Parameters<NonNullable<ComponentProps<typeof InputGroupButton>["onClick"]>>[0]) => {
+    (event: InputGroupButtonClickEvent) => {
       if (isGenerating && onStop) {
-        e.preventDefault();
+        event.preventDefault();
         onStop();
         return;
       }
-      onClick?.(e);
+      onClick?.(event);
     },
     [isGenerating, onStop, onClick]
   );
@@ -1262,39 +1266,10 @@ export const PromptInputSubmit = ({
   );
 };
 
-type PromptInputSelectChangeEventDetails = Parameters<
-  NonNullable<ComponentProps<typeof Select>["onValueChange"]>
->[1];
+export type PromptInputSelectProps = ComponentProps<typeof Select>;
 
-export type PromptInputSelectProps = Omit<
-  ComponentProps<typeof Select>,
-  "value" | "defaultValue" | "onValueChange" | "multiple"
-> & {
-  value?: string | null;
-  defaultValue?: string | null;
-  multiple?: false;
-  onValueChange?: (
-    value: string,
-    eventDetails: PromptInputSelectChangeEventDetails
-  ) => void;
-};
-
-export const PromptInputSelect = ({
-  onValueChange,
-  ...props
-}: PromptInputSelectProps) => (
-  <Select<string, false>
-    onValueChange={
-      onValueChange
-        ? (value, eventDetails) => {
-            if (value !== null) {
-              onValueChange(value, eventDetails);
-            }
-          }
-        : undefined
-    }
-    {...props}
-  />
+export const PromptInputSelect = (props: PromptInputSelectProps) => (
+  <Select {...props} />
 );
 
 export type PromptInputSelectTriggerProps = ComponentProps<

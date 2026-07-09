@@ -17,7 +17,7 @@ export function ModelSelect({
   onChange: (id: string) => void;
 }) {
   return (
-    <PromptInputSelect onValueChange={onChange} value={value}>
+    <PromptInputSelect onValueChange={(value) => onChange(value as string)} value={value}>
       <PromptInputSelectTrigger>
         <PromptInputSelectValue placeholder="Model" />
       </PromptInputSelectTrigger>

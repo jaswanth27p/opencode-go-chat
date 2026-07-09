@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Command, MessageSquare, FlaskConical, Search } from "lucide-react";
+import { LayoutDashboard, Command, MessageSquare, FlaskConical, Search, Settings, User } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,

@@ -53,3 +53,5 @@ skills-lock.json
 
 # prisma generated client
 /app/generated
+.playwright
+.playwright-cli
