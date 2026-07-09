@@ -41,7 +41,7 @@ export async function POST(req: Request) {
 
   const modelSettings: Record<string, unknown> = {};
   if (temperature !== undefined) modelSettings.temperature = temperature;
-  if (maxTokens !== undefined) modelSettings.maxTokens = maxTokens;
+  if (maxTokens !== undefined) modelSettings.maxOutputTokens = maxTokens;
   if (topP !== undefined) modelSettings.topP = topP;
   if (topK !== undefined) modelSettings.topK = topK;
   if (presencePenalty !== undefined) modelSettings.presencePenalty = presencePenalty;

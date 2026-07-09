@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const playgroundInputSchema = z.object({
+const playgroundInputSchemaRaw = z.object({
   prompt: z.string().min(1, "Prompt is required"),
   model: z.string().min(1),
   systemPrompt: z.string().optional(),
@@ -13,5 +13,20 @@ export const playgroundInputSchema = z.object({
   seed: z.coerce.number().int().optional(),
   stopSequences: z.string().optional(),
 });
+
+export const playgroundInputSchema = z.preprocess((input) => {
+  if (typeof input !== "object" || input === null) {
+    return input;
+  }
+
+  const data = input as Record<string, unknown>;
+
+  if ("maxOutputTokens" in data && data.maxOutputTokens !== undefined) {
+    const { maxOutputTokens, ...rest } = data;
+    return { ...rest, maxTokens: maxOutputTokens };
+  }
+
+  return input;
+}, playgroundInputSchemaRaw);
 
 export type PlaygroundInput = z.infer<typeof playgroundInputSchema>;

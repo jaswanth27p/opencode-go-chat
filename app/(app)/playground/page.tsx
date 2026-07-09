@@ -32,7 +32,7 @@ export default function PlaygroundPage() {
       model,
       systemPrompt: systemPrompt || undefined,
       temperature: temperature ? Number(temperature) : undefined,
-      maxTokens: maxTokens ? Number(maxTokens) : undefined,
+      maxOutputTokens: maxTokens ? Number(maxTokens) : undefined,
       topP: topP ? Number(topP) : undefined,
       topK: topK ? Number(topK) : undefined,
       presencePenalty: presencePenalty ? Number(presencePenalty) : undefined,
