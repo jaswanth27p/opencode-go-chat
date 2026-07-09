@@ -29,7 +29,9 @@ export default async function AppLayout({
           </div>
           <SidebarTrigger className="ml-auto md:hidden" />
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-4">{children}</div>
+        <div className="flex flex-1 flex-col gap-4 p-4">
+          <div className="mx-auto w-full max-w-7xl">{children}</div>
+        </div>
       </SidebarInset>
       <CommandMenu />
     </SidebarProvider>
