@@ -10,7 +10,11 @@ import { RequestContext } from "@mastra/core/request-context";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { requireUser } from "@/lib/session";
 import { mastra } from "@/mastra";
-import { DEFAULT_MODEL, getModel } from "@/mastra/models";
+import {
+  DEFAULT_MODEL,
+  getModel,
+  sanitizeMessagesForModel,
+} from "@/mastra/models";
 
 type Modality = "image" | "audio" | "video";
 
@@ -78,7 +82,11 @@ export async function POST(
   const modelId = typeof body.model === "string" ? body.model : DEFAULT_MODEL;
   const model = getModel(modelId);
 
-  const lastUserMessage = [...messages].reverse().find((m) => m.role === "user");
+  const sanitizedMessages = sanitizeMessagesForModel(messages, model);
+
+  const lastUserMessage = [...sanitizedMessages]
+    .reverse()
+    .find((m) => m.role === "user");
   const blocked = blockedModality(lastUserMessage, model);
 
   if (blocked) {
@@ -130,7 +138,7 @@ export async function POST(
     mastra,
     agentId: "assistant-agent",
     params: {
-      messages,
+      messages: sanitizedMessages,
       memory: { thread: threadId, resource: user.id },
       requestContext,
     },
