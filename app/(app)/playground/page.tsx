@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ModelSelect } from "@/components/chat/model-select";
 import { DEFAULT_MODEL } from "@/mastra/models";
+import { toast } from "sonner";
+import { playgroundInputSchema } from "@/lib/validations/playground";
 
 const USAGE_MARKER = "\n\n<<usage>>";
 
@@ -15,7 +17,7 @@ export default function PlaygroundPage() {
   const [model, setModel] = React.useState(DEFAULT_MODEL);
   const [systemPrompt, setSystemPrompt] = React.useState("");
   const [temperature, setTemperature] = React.useState("0.7");
-  const [maxOutputTokens, setMaxOutputTokens] = React.useState("");
+  const [maxTokens, setMaxTokens] = React.useState("");
   const [topP, setTopP] = React.useState("");
   const [topK, setTopK] = React.useState("");
   const [presencePenalty, setPresencePenalty] = React.useState("");
@@ -30,7 +32,7 @@ export default function PlaygroundPage() {
       model,
       systemPrompt: systemPrompt || undefined,
       temperature: temperature ? Number(temperature) : undefined,
-      maxOutputTokens: maxOutputTokens ? Number(maxOutputTokens) : undefined,
+      maxTokens: maxTokens ? Number(maxTokens) : undefined,
       topP: topP ? Number(topP) : undefined,
       topK: topK ? Number(topK) : undefined,
       presencePenalty: presencePenalty ? Number(presencePenalty) : undefined,
@@ -53,6 +55,38 @@ export default function PlaygroundPage() {
       return [text, null] as const;
     }
   }, [completion]);
+
+  const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    const parsed = playgroundInputSchema.safeParse({
+      prompt: input,
+      model,
+      systemPrompt: systemPrompt || undefined,
+      temperature: temperature ? Number(temperature) : undefined,
+      maxTokens: maxTokens ? Number(maxTokens) : undefined,
+      topP: topP ? Number(topP) : undefined,
+      topK: topK ? Number(topK) : undefined,
+      presencePenalty: presencePenalty ? Number(presencePenalty) : undefined,
+      frequencyPenalty: frequencyPenalty ? Number(frequencyPenalty) : undefined,
+      seed: seed ? Number(seed) : undefined,
+      stopSequences: stopSequences || undefined,
+    });
+
+    if (!parsed.success) {
+      const first = parsed.error.issues[0];
+      toast.error(first?.message || "Invalid input");
+      return;
+    }
+
+    handleSubmit(e);
+  };
+
+  React.useEffect(() => {
+    if (error) {
+      toast.error(error.message || "Something went running the model. Try again.");
+    }
+  }, [error]);
 
   return (
     <div className="grid h-[calc(100vh-6rem)] grid-cols-1 gap-4 lg:grid-cols-[320px_1fr] lg:gap-6">
@@ -85,9 +119,9 @@ export default function PlaygroundPage() {
             <Label htmlFor="max-tokens">Max output tokens</Label>
             <Input
               id="max-tokens"
-              onChange={(e) => setMaxOutputTokens(e.target.value)}
+              onChange={(e) => setMaxTokens(e.target.value)}
               type="number"
-              value={maxOutputTokens}
+              value={maxTokens}
             />
           </div>
           <div className="space-y-1.5">
@@ -144,7 +178,7 @@ export default function PlaygroundPage() {
       </aside>
 
       <section className="flex min-h-0 flex-col gap-4">
-        <form className="flex flex-col gap-2" onSubmit={handleSubmit}>
+        <form className="flex flex-col gap-2" onSubmit={handleFormSubmit}>
           <Textarea
             className="min-h-24"
             onChange={(e) => setInput(e.target.value)}
