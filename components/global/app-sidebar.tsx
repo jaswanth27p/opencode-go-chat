@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Settings, User, Command, MessageSquare, FlaskConical } from "lucide-react";
+import { LayoutDashboard, Command, MessageSquare, FlaskConical, Search } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -15,6 +15,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
 import { NavUser } from "@/components/global/nav-user";
 import { ThemeToggle } from "@/components/global/theme-toggle";
 import { ConversationList } from "@/components/global/conversation-list";
@@ -71,15 +72,6 @@ export function AppSidebar({
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  tooltip="Search (⌘K)"
-                  onClick={() => setCommandMenuOpen(true)}
-                >
-                  <Command />
-                  <span>Search</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -87,6 +79,15 @@ export function AppSidebar({
       </SidebarContent>
       <SidebarFooter>
         <div className="flex items-center justify-between gap-2 px-1 group-data-[collapsible=icon]:flex-col">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-8"
+            onClick={() => setCommandMenuOpen(true)}
+            aria-label="Search (⌘K)"
+          >
+            <Search className="size-4" />
+          </Button>
           <ThemeToggle />
         </div>
         <NavUser user={user} />
