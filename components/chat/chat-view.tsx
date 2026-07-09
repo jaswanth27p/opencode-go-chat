@@ -22,9 +22,6 @@ import {
 import {
   PromptInput,
   PromptInputActionAddAttachments,
-  PromptInputActionMenu,
-  PromptInputActionMenuContent,
-  PromptInputActionMenuTrigger,
   PromptInputBody,
   PromptInputFooter,
   PromptInputSubmit,
@@ -273,12 +270,7 @@ export function ChatView({
         </PromptInputBody>
         <PromptInputFooter>
           <PromptInputTools>
-            <PromptInputActionMenu>
-              <PromptInputActionMenuTrigger />
-              <PromptInputActionMenuContent>
-                <PromptInputActionAddAttachments />
-              </PromptInputActionMenuContent>
-            </PromptInputActionMenu>
+            <PromptInputActionAddAttachments label="Add image, audio or video" />
             <ModelSelect onChange={setModel} value={model} />
           </PromptInputTools>
           <PromptInputSubmit disabled={isCreatingThread} status={status} />
