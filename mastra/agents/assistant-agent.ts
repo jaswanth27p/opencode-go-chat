@@ -31,7 +31,7 @@ export const assistantAgent = new Agent({
   inputProcessors: [
     new PIIDetector({
       model: DEFAULT_MODEL,
-      strategy: "filter",
+      strategy: "redact",
       detectionTypes: ["email", "phone", "credit-card"],
     }),
   ],
