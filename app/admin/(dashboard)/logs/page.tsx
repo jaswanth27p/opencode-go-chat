@@ -1,11 +1,4 @@
 import Link from "next/link";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { getObservabilityStore } from "@/lib/admin/observability";
 
@@ -44,24 +37,7 @@ export default async function AdminLogsPage({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h1 className="font-medium text-lg">Logs</h1>
-        <form>
-          <Select defaultValue={selectedLevel ?? "all"} name="level">
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder="All levels" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All levels</SelectItem>
-              {LEVELS.map((lvl) => (
-                <SelectItem key={lvl} value={lvl}>
-                  {lvl}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </form>
-      </div>
+      <h1 className="font-medium text-lg">Logs</h1>
       {!observability && (
         <p className="text-muted-foreground text-sm">Observability storage is not configured.</p>
       )}
