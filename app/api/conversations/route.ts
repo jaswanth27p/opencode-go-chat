@@ -12,8 +12,16 @@ export async function POST() {
     return NextResponse.json({ error: "Memory not configured" }, { status: 500 });
   }
 
-  const thread = await memory.createThread({ resourceId: user.id });
-  return NextResponse.json({ id: thread.id });
+  try {
+    const thread = await memory.createThread({ resourceId: user.id });
+    return NextResponse.json({ id: thread.id });
+  } catch (error) {
+    console.error("[conversations] Failed to create thread", error);
+    return NextResponse.json(
+      { error: "Couldn't reach the conversation store. Try again shortly." },
+      { status: 502 }
+    );
+  }
 }
 
 export async function GET(req: NextRequest) {
@@ -25,12 +33,19 @@ export async function GET(req: NextRequest) {
   }
 
   const page = Number(req.nextUrl.searchParams.get("page") ?? "0");
-  const result = await memory.listThreads({
-    filter: { resourceId: user.id },
-    page: Number.isFinite(page) && page >= 0 ? page : 0,
-    perPage: PAGE_SIZE,
-    orderBy: { field: "updatedAt", direction: "DESC" },
-  });
-
-  return NextResponse.json(result);
+  try {
+    const result = await memory.listThreads({
+      filter: { resourceId: user.id },
+      page: Number.isFinite(page) && page >= 0 ? page : 0,
+      perPage: PAGE_SIZE,
+      orderBy: { field: "updatedAt", direction: "DESC" },
+    });
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error("[conversations] Failed to list threads", error);
+    return NextResponse.json(
+      { error: "Couldn't reach the conversation store. Try again shortly." },
+      { status: 502 }
+    );
+  }
 }

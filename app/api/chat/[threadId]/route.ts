@@ -59,7 +59,16 @@ export async function POST(
     return NextResponse.json({ error: "Memory not configured" }, { status: 500 });
   }
 
-  const thread = await memory.getThreadById({ threadId });
+  let thread;
+  try {
+    thread = await memory.getThreadById({ threadId });
+  } catch (error) {
+    console.error("[chat] Failed to load thread", error);
+    return NextResponse.json(
+      { error: "Couldn't reach the conversation store. Try again shortly." },
+      { status: 502 }
+    );
+  }
   if (!thread || thread.resourceId !== user.id) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }

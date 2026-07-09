@@ -16,11 +16,19 @@ export async function GET(
     return NextResponse.json({ messages: [] });
   }
 
-  const thread = await memory.getThreadById({ threadId });
-  if (!thread || thread.resourceId !== user.id) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
+  try {
+    const thread = await memory.getThreadById({ threadId });
+    if (!thread || thread.resourceId !== user.id) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
 
-  const { messages } = await memory.recall({ threadId, resourceId: user.id });
-  return NextResponse.json({ messages: toAISdkV5Messages(messages) });
+    const { messages } = await memory.recall({ threadId, resourceId: user.id });
+    return NextResponse.json({ messages: toAISdkV5Messages(messages) });
+  } catch (error) {
+    console.error("[conversations] Failed to load messages", error);
+    return NextResponse.json(
+      { error: "Couldn't reach the conversation store. Try again shortly." },
+      { status: 502 }
+    );
+  }
 }

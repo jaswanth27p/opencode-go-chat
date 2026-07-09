@@ -2,17 +2,24 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/session";
 import { mastra } from "@/mastra";
 
+const STORAGE_ERROR = { error: "Couldn't reach the conversation store. Try again shortly." };
+
 async function getOwnedThread(threadId: string, userId: string) {
   const agent = mastra.getAgentById("assistant-agent");
   const memory = await agent.getMemory();
   if (!memory) {
-    return { memory: null, thread: null };
+    return { memory: null, thread: null, storageError: false };
   }
-  const thread = await memory.getThreadById({ threadId });
-  if (!thread || thread.resourceId !== userId) {
-    return { memory, thread: null };
+  try {
+    const thread = await memory.getThreadById({ threadId });
+    if (!thread || thread.resourceId !== userId) {
+      return { memory, thread: null, storageError: false };
+    }
+    return { memory, thread, storageError: false };
+  } catch (error) {
+    console.error("[conversations] Failed to load thread", error);
+    return { memory, thread: null, storageError: true };
   }
-  return { memory, thread };
 }
 
 export async function PATCH(
@@ -21,7 +28,10 @@ export async function PATCH(
 ) {
   const user = await requireUser();
   const { threadId } = await params;
-  const { memory, thread } = await getOwnedThread(threadId, user.id);
+  const { memory, thread, storageError } = await getOwnedThread(threadId, user.id);
+  if (storageError) {
+    return NextResponse.json(STORAGE_ERROR, { status: 502 });
+  }
   if (!memory || !thread) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
@@ -32,12 +42,17 @@ export async function PATCH(
     return NextResponse.json({ error: "title is required" }, { status: 400 });
   }
 
-  const updated = await memory.updateThread({
-    id: threadId,
-    title,
-    metadata: thread.metadata ?? {},
-  });
-  return NextResponse.json(updated);
+  try {
+    const updated = await memory.updateThread({
+      id: threadId,
+      title,
+      metadata: thread.metadata ?? {},
+    });
+    return NextResponse.json(updated);
+  } catch (error) {
+    console.error("[conversations] Failed to update thread", error);
+    return NextResponse.json(STORAGE_ERROR, { status: 502 });
+  }
 }
 
 export async function DELETE(
@@ -46,11 +61,19 @@ export async function DELETE(
 ) {
   const user = await requireUser();
   const { threadId } = await params;
-  const { memory, thread } = await getOwnedThread(threadId, user.id);
+  const { memory, thread, storageError } = await getOwnedThread(threadId, user.id);
+  if (storageError) {
+    return NextResponse.json(STORAGE_ERROR, { status: 502 });
+  }
   if (!memory || !thread) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  await memory.deleteThread(threadId);
-  return NextResponse.json({ ok: true });
+  try {
+    await memory.deleteThread(threadId);
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error("[conversations] Failed to delete thread", error);
+    return NextResponse.json(STORAGE_ERROR, { status: 502 });
+  }
 }
