@@ -25,16 +25,21 @@ export async function checkRateLimit(userId: string, scope: keyof typeof LIMITS)
   const limit = LIMITS[scope];
   const key = `ratelimit:${scope}:${userId}`;
 
-  const count = await redis.incr(key);
-  if (count === 1) {
-    await redis.expire(key, WINDOW_SECONDS);
-  }
-  const ttl = await redis.ttl(key);
-  const resetSeconds = ttl > 0 ? ttl : WINDOW_SECONDS;
+  try {
+    const count = await redis.incr(key);
+    if (count === 1) {
+      await redis.expire(key, WINDOW_SECONDS);
+    }
+    const ttl = await redis.ttl(key);
+    const resetSeconds = ttl > 0 ? ttl : WINDOW_SECONDS;
 
-  return {
-    allowed: count <= limit,
-    remaining: Math.max(0, limit - count),
-    resetSeconds,
-  };
+    return {
+      allowed: count <= limit,
+      remaining: Math.max(0, limit - count),
+      resetSeconds,
+    };
+  } catch (error) {
+    console.error(`[rate-limit] Redis unavailable, failing open for scope "${scope}":`, error);
+    return { allowed: true, remaining: limit, resetSeconds: WINDOW_SECONDS };
+  }
 }

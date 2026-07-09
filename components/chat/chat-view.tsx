@@ -4,6 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
+import { toast } from "sonner";
 import {
   Conversation,
   ConversationContent,
@@ -32,6 +33,7 @@ import {
   type PromptInputMessage,
 } from "@/components/ai-elements/prompt-input";
 import { ModelSelect } from "@/components/chat/model-select";
+import { Button } from "@/components/ui/button";
 import { useCreateConversation } from "@/hooks/use-conversations";
 import { DEFAULT_MODEL, getModel } from "@/mastra/models";
 
@@ -111,7 +113,7 @@ export function ChatView({
     threadIdRef.current = activeThreadId;
   }, [activeThreadId]);
 
-  const { messages, sendMessage, status } = useChat({
+  const { messages, sendMessage, status, error, regenerate } = useChat({
     id: activeThreadId,
     messages: initialMessages,
     transport: new DefaultChatTransport({
@@ -141,10 +143,15 @@ export function ChatView({
 
     let targetThreadId = threadId;
     if (!targetThreadId) {
-      const created = await createConversation.mutateAsync();
-      targetThreadId = created.id;
-      threadIdRef.current = targetThreadId;
-      router.push(`/chat/${targetThreadId}`);
+      try {
+        const created = await createConversation.mutateAsync();
+        targetThreadId = created.id;
+        threadIdRef.current = targetThreadId;
+        router.push(`/chat/${targetThreadId}`);
+      } catch {
+        toast.error("Couldn't start a new conversation. Try again.");
+        throw new Error("conversation creation failed");
+      }
     }
 
     sendMessage({ text: message.text, files: message.files });
@@ -179,6 +186,15 @@ export function ChatView({
         </ConversationContent>
         <ConversationScrollButton />
       </Conversation>
+
+      {status === "error" && (
+        <div className="flex items-center justify-between rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-destructive text-sm">
+          <span>{error?.message || "Something went wrong. Try again."}</span>
+          <Button onClick={() => regenerate()} size="sm" variant="outline">
+            Retry
+          </Button>
+        </div>
+      )}
 
       <PromptInput
         accept="image/*,audio/*,video/*"

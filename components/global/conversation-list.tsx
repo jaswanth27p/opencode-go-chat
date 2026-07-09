@@ -139,7 +139,14 @@ export function ConversationList() {
     <SidebarGroup className="min-h-0 flex-1">
       <SidebarGroupLabel>Chats</SidebarGroupLabel>
       <SidebarGroupContent className="min-h-24 flex-1 overflow-y-auto">
-        {threads.length === 0 && !query.isLoading ? (
+        {query.isError ? (
+          <div className="flex flex-col items-center gap-2 px-4 py-8 text-center text-muted-foreground text-xs">
+            <span>Couldn't load conversations.</span>
+            <Button onClick={() => query.refetch()} size="sm" variant="outline">
+              Retry
+            </Button>
+          </div>
+        ) : threads.length === 0 && !query.isLoading ? (
           <div className="flex flex-col items-center gap-2 px-4 py-8 text-center text-muted-foreground text-xs">
             <MessageSquareOff className="size-4" />
             <span>No conversations yet</span>

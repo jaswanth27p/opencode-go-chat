@@ -23,7 +23,7 @@ export default function PlaygroundPage() {
   const [seed, setSeed] = React.useState("");
   const [stopSequences, setStopSequences] = React.useState("");
 
-  const { completion, input, setInput, handleSubmit, isLoading } = useCompletion({
+  const { completion, input, setInput, handleSubmit, isLoading, error } = useCompletion({
     api: "/api/playground",
     streamProtocol: "text",
     body: {
@@ -156,7 +156,11 @@ export default function PlaygroundPage() {
           </Button>
         </form>
         <div className="flex-1 overflow-y-auto rounded-md border p-4 text-sm whitespace-pre-wrap">
-          {responseText || <span className="text-muted-foreground">Response will appear here.</span>}
+          {error ? (
+            <span className="text-destructive">{error.message || "Something went wrong. Try again."}</span>
+          ) : (
+            responseText || <span className="text-muted-foreground">Response will appear here.</span>
+          )}
         </div>
         {usage && (
           <div className="text-muted-foreground text-xs">
