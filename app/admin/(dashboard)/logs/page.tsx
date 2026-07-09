@@ -38,6 +38,9 @@ export default async function AdminLogsPage({
   return (
     <div className="flex flex-col gap-4">
       <h1 className="font-medium text-lg">Logs</h1>
+      <p className="text-muted-foreground text-sm">
+        Logs are forwarded from Mastra when observability logging is enabled. New logs may take a few seconds to appear.
+      </p>
       {!observability && (
         <p className="text-muted-foreground text-sm">Observability storage is not configured.</p>
       )}
