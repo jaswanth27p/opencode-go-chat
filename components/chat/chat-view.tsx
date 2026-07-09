@@ -117,9 +117,17 @@ export function ChatView({
     transport: new DefaultChatTransport({
       api: `/api/chat/${activeThreadId}`,
       body: () => ({ model: modelRef.current }),
-      prepareSendMessagesRequest: ({ body, headers, credentials }) => ({
+      prepareSendMessagesRequest: ({
+        body,
+        headers,
+        credentials,
+        id,
+        messages,
+        trigger,
+        messageId,
+      }) => ({
         api: `/api/chat/${threadIdRef.current}`,
-        body: { ...body },
+        body: { ...body, id, messages, trigger, messageId },
         headers,
         credentials,
       }),
