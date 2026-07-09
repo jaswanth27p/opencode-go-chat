@@ -25,6 +25,7 @@ import {
   useDeleteConversation,
   useRenameConversation,
 } from "@/hooks/use-conversations";
+import { toast } from "sonner";
 import type { ConversationThread } from "@/types/conversation";
 
 function ConversationRow({ thread }: { thread: ConversationThread }) {
@@ -43,11 +44,17 @@ function ConversationRow({ thread }: { thread: ConversationThread }) {
       <SidebarMenuItem>
         <form
           className="flex w-full items-center gap-1 px-2"
-          onSubmit={(e) => {
+          onSubmit={async (e) => {
             e.preventDefault();
             const next = title.trim();
-            if (next) {
-              rename.mutate({ threadId: thread.id, title: next });
+            if (!next) {
+              setEditing(false);
+              return;
+            }
+            try {
+              await rename.mutateAsync({ threadId: thread.id, title: next });
+            } catch {
+              toast.error("Couldn't rename conversation. Try again.");
             }
             setEditing(false);
           }}
@@ -80,14 +87,14 @@ function ConversationRow({ thread }: { thread: ConversationThread }) {
               className="absolute top-1 right-1 size-6"
               size="icon"
               variant="ghost"
-            />
+            >
+              <MoreHorizontal className="size-3.5" />
+            </Button>
           }
-        >
-          <MoreHorizontal className="size-3.5" />
-        </DropdownMenuTrigger>
+        />
         <DropdownMenuContent align="end">
           <DropdownMenuItem
-            onSelect={() => {
+            onSelect={async () => {
               setTitle(thread.title ?? "");
               setEditing(true);
             }}
@@ -95,13 +102,17 @@ function ConversationRow({ thread }: { thread: ConversationThread }) {
             Rename
           </DropdownMenuItem>
           <DropdownMenuItem
-            onSelect={() => {
-              remove.mutate({ threadId: thread.id });
-              if (isActive) {
-                router.push("/chat");
+            variant="destructive"
+            onSelect={async () => {
+              try {
+                await remove.mutateAsync({ threadId: thread.id });
+                if (isActive) {
+                  router.push("/chat");
+                }
+              } catch {
+                toast.error("Couldn't delete conversation. Try again.");
               }
             }}
-            variant="destructive"
           >
             Delete
           </DropdownMenuItem>
