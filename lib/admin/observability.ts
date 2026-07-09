@@ -52,19 +52,19 @@ export async function getOverviewStats(): Promise<OverviewStats> {
 
   const tracesLast24h = await safeCount(prisma.$queryRaw<{ count: bigint }[]>`
     SELECT COUNT(*)::bigint AS count
-    FROM mastra_ai_spans
+    FROM mastra_span_events
     WHERE "parentSpanId" IS NULL AND "startedAt" >= ${since}
   `);
 
   const errorsLast24h = await safeCount(prisma.$queryRaw<{ count: bigint }[]>`
     SELECT COUNT(*)::bigint AS count
-    FROM mastra_ai_spans
+    FROM mastra_span_events
     WHERE "parentSpanId" IS NULL AND "startedAt" >= ${since} AND "error" IS NOT NULL
   `);
 
   const avgLatencyMsLast24h = await prisma.$queryRaw<{ avg_latency: number | null }[]>`
     SELECT AVG(EXTRACT(EPOCH FROM ("endedAt" - "startedAt")) * 1000) AS avg_latency
-    FROM mastra_ai_spans
+    FROM mastra_span_events
     WHERE "parentSpanId" IS NULL AND "startedAt" >= ${since} AND "endedAt" IS NOT NULL
   `
     .then(([row]) => (row.avg_latency === null ? null : Math.round(row.avg_latency)))
@@ -79,7 +79,7 @@ export async function getOverviewStats(): Promise<OverviewStats> {
       TO_CHAR(DATE_TRUNC('day', "startedAt"), 'YYYY-MM-DD') AS day,
       COUNT(*) FILTER (WHERE "error" IS NULL)::bigint AS success,
       COUNT(*) FILTER (WHERE "error" IS NOT NULL)::bigint AS error
-    FROM mastra_ai_spans
+    FROM mastra_span_events
     WHERE "parentSpanId" IS NULL AND "startedAt" >= ${since14d}
     GROUP BY 1
     ORDER BY 1 ASC
@@ -96,7 +96,7 @@ export async function getOverviewStats(): Promise<OverviewStats> {
       TO_CHAR(DATE_TRUNC('hour', "startedAt"), 'YYYY-MM-DD HH24:00') AS hour,
       COUNT(*) FILTER (WHERE "error" IS NULL)::bigint AS success,
       COUNT(*) FILTER (WHERE "error" IS NOT NULL)::bigint AS error
-    FROM mastra_ai_spans
+    FROM mastra_span_events
     WHERE "parentSpanId" IS NULL AND "startedAt" >= ${since1h}
     GROUP BY 1
     ORDER BY 1 ASC
@@ -111,7 +111,7 @@ export async function getOverviewStats(): Promise<OverviewStats> {
     SELECT
       "requestContext"->>'model' AS model,
       COUNT(*)::bigint AS count
-    FROM mastra_ai_spans
+    FROM mastra_span_events
     WHERE "parentSpanId" IS NULL AND "startedAt" >= ${since}
     GROUP BY 1
     ORDER BY count DESC
@@ -131,7 +131,7 @@ export async function getOverviewStats(): Promise<OverviewStats> {
     SELECT
       COUNT(*) FILTER (WHERE "error" IS NULL)::bigint AS success,
       COUNT(*) FILTER (WHERE "error" IS NOT NULL)::bigint AS error
-    FROM mastra_ai_spans
+    FROM mastra_span_events
     WHERE "parentSpanId" IS NULL AND "startedAt" >= ${since}
   `
     .then(([row]) => ({ success: Number(row?.success ?? 0), error: Number(row?.error ?? 0) }))
@@ -144,7 +144,7 @@ export async function getOverviewStats(): Promise<OverviewStats> {
     SELECT
       TO_CHAR(DATE_TRUNC('day', "startedAt"), 'YYYY-MM-DD') AS day,
       AVG(EXTRACT(EPOCH FROM ("endedAt" - "startedAt")) * 1000) AS avg_latency
-    FROM mastra_ai_spans
+    FROM mastra_span_events
     WHERE "parentSpanId" IS NULL AND "startedAt" >= ${since14d} AND "endedAt" IS NOT NULL
     GROUP BY 1
     ORDER BY 1 ASC

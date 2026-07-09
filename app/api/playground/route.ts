@@ -41,6 +41,9 @@ export async function POST(req: Request) {
 
   const modelSettings: Record<string, unknown> = {};
   if (temperature !== undefined) modelSettings.temperature = temperature;
+  // The form label says "Max output tokens" and the schema exposes `maxTokens`,
+  // but Mastra's `agent.stream` modelSettings expects the AI SDK v5 key
+  // `maxOutputTokens`.
   if (maxTokens !== undefined) modelSettings.maxOutputTokens = maxTokens;
   if (topP !== undefined) modelSettings.topP = topP;
   if (topK !== undefined) modelSettings.topK = topK;

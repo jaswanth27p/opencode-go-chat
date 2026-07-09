@@ -31,7 +31,7 @@ export function FeatureCards() {
             <CardDescription>{feature.description}</CardDescription>
           </CardHeader>
           <CardContent className="mt-auto">
-            <Button render={<Link href={feature.href} />} className="gap-2">
+            <Button render={<Link href={feature.href} />} nativeButton={false} className="gap-2">
               Open {feature.title}
               <ArrowRight className="size-4" />
             </Button>

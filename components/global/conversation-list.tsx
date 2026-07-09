@@ -94,7 +94,7 @@ function ConversationRow({ thread }: { thread: ConversationThread }) {
         />
         <DropdownMenuContent align="end">
           <DropdownMenuItem
-            onSelect={async () => {
+            onClick={() => {
               setTitle(thread.title ?? "");
               setEditing(true);
             }}
@@ -103,7 +103,7 @@ function ConversationRow({ thread }: { thread: ConversationThread }) {
           </DropdownMenuItem>
           <DropdownMenuItem
             variant="destructive"
-            onSelect={async () => {
+            onClick={async () => {
               try {
                 await remove.mutateAsync({ threadId: thread.id });
                 if (isActive) {

@@ -22,6 +22,9 @@ import {
 import {
   PromptInput,
   PromptInputActionAddAttachments,
+  PromptInputActionMenu,
+  PromptInputActionMenuContent,
+  PromptInputActionMenuTrigger,
   PromptInputBody,
   PromptInputFooter,
   PromptInputSubmit,
@@ -180,7 +183,6 @@ export function ChatView({
       } catch {
         toast.error("Couldn't start a new conversation. Try again.");
         setIsCreatingThread(false);
-        setOptimisticUserMessage(null);
         return;
       }
       setIsCreatingThread(false);
@@ -270,7 +272,12 @@ export function ChatView({
         </PromptInputBody>
         <PromptInputFooter>
           <PromptInputTools>
-            <PromptInputActionAddAttachments label="Add image, audio or video" />
+            <PromptInputActionMenu>
+              <PromptInputActionMenuTrigger />
+              <PromptInputActionMenuContent>
+                <PromptInputActionAddAttachments label="Add image, audio or video" />
+              </PromptInputActionMenuContent>
+            </PromptInputActionMenu>
             <ModelSelect onChange={setModel} value={model} />
           </PromptInputTools>
           <PromptInputSubmit disabled={isCreatingThread} status={status} />

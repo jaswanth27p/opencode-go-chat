@@ -30,7 +30,7 @@ export const assistantAgent = new Agent({
   }),
   inputProcessors: [
     new PIIDetector({
-      model: DEFAULT_MODEL,
+      model: "opencode-go/deepseek-v4-pro",
       strategy: "redact",
       detectionTypes: ["email", "phone", "credit-card"],
     }),

@@ -10,6 +10,7 @@ import { RequestContext } from "@mastra/core/request-context";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { requireUser } from "@/lib/session";
 import { mastra } from "@/mastra";
+import { chatBodySchema } from "@/lib/validations/chat";
 import {
   DEFAULT_MODEL,
   getModel,
@@ -78,8 +79,15 @@ export async function POST(
   }
 
   const body = await req.json();
-  const messages = body.messages as UIMessage[];
-  const modelId = typeof body.model === "string" ? body.model : DEFAULT_MODEL;
+  const parseResult = chatBodySchema.safeParse(body);
+  if (!parseResult.success) {
+    return NextResponse.json(
+      { error: parseResult.error.issues[0]?.message ?? "Invalid request" },
+      { status: 400 }
+    );
+  }
+  const messages = parseResult.data.messages as UIMessage[];
+  const modelId = parseResult.data.model ?? DEFAULT_MODEL;
   const model = getModel(modelId);
 
   const sanitizedMessages = sanitizeMessagesForModel(messages, model);

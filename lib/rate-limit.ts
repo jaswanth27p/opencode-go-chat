@@ -3,7 +3,11 @@ import Redis from "ioredis";
 
 const globalForRedis = globalThis as unknown as { redis: Redis | undefined };
 
-const redis = globalForRedis.redis ?? new Redis(process.env.REDIS_URL as string);
+const REDIS_KEY_PREFIX = process.env.REDIS_KEY_PREFIX ?? "opencode-go-chat:";
+
+const redis =
+  globalForRedis.redis ??
+  new Redis(process.env.REDIS_URL as string, { keyPrefix: REDIS_KEY_PREFIX });
 
 if (process.env.NODE_ENV !== "production") {
   globalForRedis.redis = redis;
