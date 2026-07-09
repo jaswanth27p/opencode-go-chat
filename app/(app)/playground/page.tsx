@@ -55,8 +55,8 @@ export default function PlaygroundPage() {
   }, [completion]);
 
   return (
-    <div className="grid h-[calc(100vh-6rem)] grid-cols-[320px_1fr] gap-6">
-      <aside className="flex flex-col gap-4 overflow-y-auto pr-4">
+    <div className="grid h-[calc(100vh-6rem)] grid-cols-1 gap-4 lg:grid-cols-[320px_1fr] lg:gap-6">
+      <aside className="flex flex-col gap-4 overflow-y-auto lg:pr-4">
         <div className="space-y-1.5">
           <Label>Model</Label>
           <ModelSelect onChange={setModel} value={model} />
