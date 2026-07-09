@@ -53,16 +53,45 @@ export async function POST(req: Request) {
       modelSettings,
     });
 
+    // Mastra's agent.stream() doesn't reject on model/provider failures (e.g.
+    // an invalid API key) — it logs internally and resolves an empty
+    // textStream with `result.error` set. Peek the first chunk before
+    // committing to a 200 response so a failure that occurs before any
+    // output can still be reported as a proper 502 instead of silently
+    // streaming an empty body.
+    const reader = result.textStream.getReader();
+    const first = await reader.read();
+
+    if (result.error) {
+      console.error("[playground]", result.error);
+      return new Response(
+        "Something went wrong talking to the model. Try again or pick a different model.",
+        { status: 502, headers: { "Content-Type": "text/plain; charset=utf-8" } }
+      );
+    }
+
     const encoder = new TextEncoder();
     const bodyStream = new ReadableStream<Uint8Array>({
       async start(controller) {
-        const reader = result.textStream.getReader();
+        if (!first.done) {
+          controller.enqueue(encoder.encode(first.value));
+        }
         while (true) {
           const { done, value } = await reader.read();
           if (done) {
             break;
           }
           controller.enqueue(encoder.encode(value));
+        }
+        if (result.error) {
+          console.error("[playground]", result.error);
+          controller.enqueue(
+            encoder.encode(
+              "\n\n[error] Something went wrong talking to the model. Try again or pick a different model."
+            )
+          );
+          controller.close();
+          return;
         }
         const usage = await result.usage;
         controller.enqueue(encoder.encode(`${USAGE_MARKER}${JSON.stringify(usage)}`));
