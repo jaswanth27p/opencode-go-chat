@@ -37,6 +37,7 @@ import { ModelSelect } from "@/components/chat/model-select";
 import { Button } from "@/components/ui/button";
 import { useCreateConversation } from "@/hooks/use-conversations";
 import { DEFAULT_MODEL, getModel, modelSupportsMediaType } from "@/mastra/models";
+import { motion } from "motion/react";
 
 const MODEL_STORAGE_KEY = "chat:last-model";
 
@@ -182,6 +183,7 @@ export function ChatView({
       } catch {
         toast.error("Couldn't start a new conversation. Try again.");
         setIsCreatingThread(false);
+        setOptimisticUserMessage(null);
         return;
       }
       setIsCreatingThread(false);
@@ -227,7 +229,15 @@ export function ChatView({
                   <MessageContent>
                     <div className="flex items-center gap-2 text-muted-foreground text-sm">
                       <span className="relative flex size-2">
-                        <span className="absolute inline-flex size-full animate-ping rounded-full bg-primary opacity-75" />
+                        <motion.span
+                          animate={{ scale: [1, 2], opacity: [0.75, 0] }}
+                          className="absolute inline-flex size-full rounded-full bg-primary opacity-75"
+                          transition={{
+                            duration: 1,
+                            ease: "easeOut",
+                            repeat: Number.POSITIVE_INFINITY,
+                          }}
+                        />
                         <span className="relative inline-flex size-2 rounded-full bg-primary" />
                       </span>
                       {status === "submitted" ? "Thinking…" : "Generating…"}
