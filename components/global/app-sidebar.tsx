@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Command, Search } from "lucide-react";
+import { LayoutDashboard, Command, MessageSquare, FlaskConical, Search, Settings, User } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -18,10 +18,17 @@ import {
 import { Button } from "@/components/ui/button";
 import { NavUser } from "@/components/global/nav-user";
 import { ThemeToggle } from "@/components/global/theme-toggle";
+import { ConversationList } from "@/components/global/conversation-list";
 import { useUiStore } from "@/store/use-ui-store";
 import type { PublicUser } from "@/types/user";
 
-const NAV_ITEMS = [{ title: "Dashboard", url: "/dashboard", icon: LayoutDashboard }];
+const NAV_ITEMS = [
+  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+  { title: "Chat", url: "/chat", icon: MessageSquare },
+  { title: "Playground", url: "/playground", icon: FlaskConical },
+  { title: "Settings", url: "/settings", icon: Settings },
+  { title: "Profile", url: "/profile", icon: User },
+];
 
 export function AppSidebar({
   user,
@@ -40,16 +47,16 @@ export function AppSidebar({
                 <Command className="size-4" />
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">Acme Inc</span>
+                <span className="truncate font-medium">OpenCode Go</span>
                 <span className="truncate text-xs text-muted-foreground">
-                  Template
+                  Chat & Playground
                 </span>
               </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="flex min-h-0 flex-1 flex-col">
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -68,6 +75,7 @@ export function AppSidebar({
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+        <ConversationList />
       </SidebarContent>
       <SidebarFooter>
         <div className="flex items-center justify-between gap-2 px-1 group-data-[collapsible=icon]:flex-col">

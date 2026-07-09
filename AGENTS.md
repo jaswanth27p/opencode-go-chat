@@ -52,3 +52,16 @@ prisma/
     - This applies everywhere, not just `components/ui/` — dashboard/settings/profile pages and any new UI must use the same tokens so light/dark theming and visual consistency hold app-wide.
     - If a needed token genuinely doesn't exist yet, add it to the theme in `app/globals.css` (under `:root` / `.dark` / `@theme inline`), don't inline a raw value in a component.
 13. **Animations use `motion` (the Framer Motion successor, imported from `"motion/react"`)** — e.g. `<motion.div>`, `AnimatePresence`. Don't hand-roll CSS keyframes/transitions for anything interactive (enter/exit, drag, layout) or reach for another animation library; plain Tailwind transition utilities are still fine for simple hover/focus states.
+
+## Dev server
+
+14. **Before starting a dev/build server, kill any process already listening on the target port** (3000/3001/3002) — leftover `next dev` instances from a prior session cause "port in use" fallbacks and stale builds. On Windows: `Get-NetTCPConnection -LocalPort 3000,3001,3002 -State Listen | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }` (use a non-reserved variable name inside the loop; `$_`/`$PID` is read-only). Verify with `Get-NetTCPConnection -LocalPort 3000,3001,3002 -State Listen` (empty output = clear) before launching. Same applies to other long-lived servers (e.g. a stale `pnpm dev` PID saved earlier) — kill by PID first.
+
+## Long-running ops — keep moving forward
+
+15. **Never block on a long-running operation with no way out.** When you start something that may run indefinitely or for a long time — `next dev` / `pnpm dev`, a build (`next build`, `pnpm build`), a Playwright run (`pnpm exec playwright ...`, `playwright codegen`, a test server), a watcher (`--watch`), a dev DB, a tunnel — set a time limit up front and don't let it stall the session.
+    - **Set a timeout on the command itself** (e.g. `bash` tool `timeout` param) when the op is expected to finish in bounded time. Better to hit the timeout and re-check than hang forever.
+    - **For ops that are supposed to keep running** (dev server, Playwright UI, `codegen`, `--watch`), launch them in the background/sidelines, capture the PID, and **poll progress periodically** instead of waiting synchronously. Re-check logs/output on a cadence (every step or two) to confirm it's still in progress vs. silently done vs. hung.
+    - **Verify it actually started.** After launching a background dev server / Playwright / build, immediately check the port, the process list, or the log file before assuming it's up. A silent launch that died on startup is the most common "stuck" cause.
+    - **If a command is still running inside the bash tool**, don't fire a second copy of the same op — read its streamed output / status first. If it's done, move on; if it's hung past the expected duration, kill it by PID and relaunch with a tighter timeout rather than waiting longer.
+    - **Keep moving forward.** While a long op runs in the background, continue with non-overlapping work (editing files, running unrelated checks). Don't sit idle polling a single command — batch other tool calls in parallel and come back to the op between steps.

@@ -25,11 +25,13 @@ export default async function AppLayout({
             <div className="flex aspect-square size-6 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground">
               <Command className="size-3.5" />
             </div>
-            <span className="text-sm font-medium">Acme Inc</span>
+            <span className="text-sm font-medium">OpenCode Go</span>
           </div>
           <SidebarTrigger className="ml-auto md:hidden" />
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-4">{children}</div>
+        <div className="flex flex-1 flex-col gap-4 p-4">
+          <div className="mx-auto w-full max-w-7xl">{children}</div>
+        </div>
       </SidebarInset>
       <CommandMenu />
     </SidebarProvider>
