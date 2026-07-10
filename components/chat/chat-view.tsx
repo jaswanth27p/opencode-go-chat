@@ -37,7 +37,7 @@ import { PersonaHeader } from "@/components/chat/persona-header";
 import { Button } from "@/components/ui/button";
 import { useCreateConversation } from "@/hooks/use-conversations";
 import { DEFAULT_MODEL, getModel, modelSupportsMediaType } from "@/mastra/models";
-import type { Persona } from "@/mastra/personas";
+import { getPersona } from "@/mastra/personas";
 import { useUiStore } from "@/store/use-ui-store";
 import { motion } from "motion/react";
 
@@ -105,12 +105,13 @@ function buildOptimisticUserMessage(text: string, files: FileUIPart[]): UIMessag
 export function ChatView({
   threadId,
   initialMessages,
-  persona,
+  personaId,
 }: {
   threadId?: string;
   initialMessages?: UIMessage[];
-  persona?: Persona;
+  personaId?: string;
 }) {
+  const persona = personaId ? getPersona(personaId) : undefined;
   const createConversation = useCreateConversation();
   const setActiveThreadId = useUiStore((state) => state.setActiveThreadId);
   const [model, setModel] = React.useState(DEFAULT_MODEL);

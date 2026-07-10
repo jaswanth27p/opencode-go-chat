@@ -21,7 +21,7 @@ export default async function CharacterChatPage({
   if (!threadId) {
     return (
       <div className="flex h-[calc(100vh-6rem)] flex-col">
-        <ChatView persona={persona} />
+        <ChatView personaId={persona.id} />
       </div>
     );
   }
@@ -52,7 +52,7 @@ export default async function CharacterChatPage({
 
   return (
     <div className="flex h-[calc(100vh-6rem)] flex-col">
-      <ChatView initialMessages={toAISdkV5Messages(messages)} persona={persona} threadId={threadId} />
+      <ChatView initialMessages={toAISdkV5Messages(messages)} personaId={persona.id} threadId={threadId} />
     </div>
   );
 }
