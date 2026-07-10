@@ -14,8 +14,9 @@ const mono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "OpenCode Go Chat",
-  description: "OpenCode Go Chat — full-stack Next.js app",
+  title: "AI Lab",
+  description:
+    "AI Lab — chat, persona agents, and a model playground, built on Next.js and Mastra.",
 };
 
 export default function RootLayout({

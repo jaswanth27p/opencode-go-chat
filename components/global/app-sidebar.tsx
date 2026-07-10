@@ -47,9 +47,9 @@ export function AppSidebar({
                 <Command className="size-4" />
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">OpenCode Go</span>
+                <span className="truncate font-medium">AI Lab</span>
                 <span className="truncate text-xs text-muted-foreground">
-                  Chat & Playground
+                  Chat, Personas & Playground
                 </span>
               </div>
             </SidebarMenuButton>
