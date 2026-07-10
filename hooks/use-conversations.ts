@@ -32,8 +32,15 @@ type ConversationsCache = InfiniteData<ConversationListResponse>;
 export function useCreateConversation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (): Promise<{ id: string }> => {
-      const res = await fetch("/api/conversations", { method: "POST" });
+    mutationFn: async (variables: {
+      threadId: string;
+      personaId?: string;
+    }): Promise<{ id: string; personaId?: string }> => {
+      const res = await fetch("/api/conversations", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(variables),
+      });
       if (!res.ok) {
         throw new Error("Failed to create conversation");
       }
@@ -47,6 +54,7 @@ export function useCreateConversation() {
         title: null,
         createdAt: now,
         updatedAt: now,
+        metadata: data.personaId ? { personaId: data.personaId } : undefined,
       };
       queryClient.setQueryData<ConversationsCache>(QUERY_KEY, (old) => {
         if (!old || old.pages.length === 0) {
