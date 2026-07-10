@@ -28,8 +28,8 @@ See [AGENTS.md](./AGENTS.md) for folder structure and coding rules to follow whe
 
 - **RAG** — one-shot chat with uploaded documents (PDF, docs, text,
   images), plus **Projects**: upload a set of files, then chat and search
-  across them with reranking, query rewriting, and hybrid search all
-  implemented, not just referenced.
+  across them, with reranking, query rewriting, and hybrid search built in
+  from the start rather than bolted on later.
 - **Website & docs chat** — point at a site or docs set and chat with it
   directly.
 - **MCP-connected characters** — selected personas get live MCP tool

@@ -16,7 +16,7 @@ export default async function ChatPage({
   if (!threadId) {
     return (
       <div className="flex h-[calc(100vh-6rem)] flex-col">
-        <ChatView />
+        <ChatView key="new" />
       </div>
     );
   }
@@ -42,7 +42,7 @@ export default async function ChatPage({
 
   return (
     <div className="flex h-[calc(100vh-6rem)] flex-col">
-      <ChatView initialMessages={toAISdkV5Messages(messages)} threadId={threadId} />
+      <ChatView key={threadId} initialMessages={toAISdkV5Messages(messages)} threadId={threadId} />
     </div>
   );
 }

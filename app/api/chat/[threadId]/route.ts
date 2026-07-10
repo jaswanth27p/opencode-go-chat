@@ -12,6 +12,7 @@ import { requireUser } from "@/lib/session";
 import { mastra } from "@/mastra";
 import { chatBodySchema } from "@/lib/validations/chat";
 import { resolveAgentId, getThreadPersonaId } from "@/mastra/agent-resolver";
+import { getPersona } from "@/mastra/personas";
 import {
   DEFAULT_MODEL,
   getModel,
@@ -79,7 +80,11 @@ export async function POST(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const agentId = resolveAgentId(getThreadPersonaId(thread));
+  const threadPersonaId = getThreadPersonaId(thread);
+  if (threadPersonaId && !getPersona(threadPersonaId)) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  const agentId = resolveAgentId(threadPersonaId);
 
   const body = await req.json();
   const parseResult = chatBodySchema.safeParse(body);

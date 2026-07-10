@@ -21,7 +21,7 @@ export default async function CharacterChatPage({
   if (!threadId) {
     return (
       <div className="flex h-[calc(100vh-6rem)] flex-col">
-        <ChatView personaId={persona.id} />
+        <ChatView key={`${persona.id}-new`} personaId={persona.id} />
       </div>
     );
   }
