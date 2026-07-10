@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MessageSquare, FlaskConical, ArrowRight } from "lucide-react";
+import { MessageSquare, Users, FlaskConical, ArrowRight } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -11,6 +11,12 @@ const FEATURES = [
     icon: MessageSquare,
   },
   {
+    title: "Characters",
+    description: "Chat with personas tuned for a specific role — code review, debugging, writing, and more.",
+    href: "/characters",
+    icon: Users,
+  },
+  {
     title: "Playground",
     description: "Test prompts, tweak temperature, max tokens and other model parameters.",
     href: "/playground",
@@ -20,7 +26,7 @@ const FEATURES = [
 
 export function FeatureCards() {
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {FEATURES.map((feature) => (
         <Card key={feature.title} className="flex flex-col">
           <CardHeader>
