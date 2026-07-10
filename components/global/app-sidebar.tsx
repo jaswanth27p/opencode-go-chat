@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Command, MessageSquare, FlaskConical, Search, Settings, User } from "lucide-react";
+import { LayoutDashboard, Command, MessageSquare, Users, FlaskConical, Search, Settings, User } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -25,6 +25,7 @@ import type { PublicUser } from "@/types/user";
 const NAV_ITEMS = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Chat", url: "/chat", icon: MessageSquare },
+  { title: "Characters", url: "/characters", icon: Users },
   { title: "Playground", url: "/playground", icon: FlaskConical },
   { title: "Settings", url: "/settings", icon: Settings },
   { title: "Profile", url: "/profile", icon: User },

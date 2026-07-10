@@ -2,8 +2,8 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import { MoreHorizontal, MessageSquareOff, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { MoreHorizontal, MessageSquare, MessageSquareOff, Loader2 } from "lucide-react";
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -27,17 +27,23 @@ import {
 } from "@/hooks/use-conversations";
 import { toast } from "sonner";
 import type { ConversationThread } from "@/types/conversation";
+import { useUiStore } from "@/store/use-ui-store";
+import { getPersona } from "@/mastra/personas";
 
 function ConversationRow({ thread }: { thread: ConversationThread }) {
-  const params = useParams<{ threadId?: string }>();
   const router = useRouter();
+  const activeThreadId = useUiStore((state) => state.activeThreadId);
   const rename = useRenameConversation();
   const remove = useDeleteConversation();
   const [editing, setEditing] = React.useState(false);
   const [title, setTitle] = React.useState(thread.title ?? "");
 
-  const isActive = params?.threadId === thread.id;
+  const isActive = activeThreadId === thread.id;
   const label = thread.title?.trim() || "New chat";
+  const personaId = typeof thread.metadata?.personaId === "string" ? thread.metadata.personaId : undefined;
+  const persona = personaId ? getPersona(personaId) : undefined;
+  const href = persona ? `/characters/${persona.id}/${thread.id}` : `/chat/${thread.id}`;
+  const Icon = persona?.icon ?? MessageSquare;
 
   if (editing) {
     return (
@@ -75,9 +81,10 @@ function ConversationRow({ thread }: { thread: ConversationThread }) {
     <SidebarMenuItem>
       <SidebarMenuButton
         isActive={isActive}
-        render={<Link href={`/chat/${thread.id}`} />}
+        render={<Link href={href} />}
         tooltip={label}
       >
+        <Icon className="size-4 shrink-0" />
         <span className="truncate">{label}</span>
       </SidebarMenuButton>
       <DropdownMenu>
