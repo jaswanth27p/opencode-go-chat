@@ -3,6 +3,7 @@ import { PostgresStoreVNext } from "@mastra/pg";
 import { createLogger } from "@mastra/core/logger";
 import { Observability, MastraStorageExporter } from "@mastra/observability";
 import { assistantAgent } from "./agents/assistant-agent";
+import { personaAgents } from "./agents/persona-agents";
 
 export const mastra = new Mastra({
   storage: new PostgresStoreVNext({
@@ -25,5 +26,5 @@ export const mastra = new Mastra({
       },
     },
   }),
-  agents: { assistantAgent },
+  agents: { assistantAgent, ...personaAgents },
 });
