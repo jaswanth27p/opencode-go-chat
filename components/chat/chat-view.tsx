@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type FileUIPart, type UIMessage } from "ai";
 import { nanoid } from "nanoid";
@@ -34,9 +33,12 @@ import {
   type PromptInputMessage,
 } from "@/components/ai-elements/prompt-input";
 import { ModelSelect } from "@/components/chat/model-select";
+import { PersonaHeader } from "@/components/chat/persona-header";
 import { Button } from "@/components/ui/button";
 import { useCreateConversation } from "@/hooks/use-conversations";
 import { DEFAULT_MODEL, getModel, modelSupportsMediaType } from "@/mastra/models";
+import type { Persona } from "@/mastra/personas";
+import { useUiStore } from "@/store/use-ui-store";
 import { motion } from "motion/react";
 
 const MODEL_STORAGE_KEY = "chat:last-model";
@@ -103,12 +105,14 @@ function buildOptimisticUserMessage(text: string, files: FileUIPart[]): UIMessag
 export function ChatView({
   threadId,
   initialMessages,
+  persona,
 }: {
   threadId?: string;
   initialMessages?: UIMessage[];
+  persona?: Persona;
 }) {
-  const router = useRouter();
   const createConversation = useCreateConversation();
+  const setActiveThreadId = useUiStore((state) => state.setActiveThreadId);
   const [model, setModel] = React.useState(DEFAULT_MODEL);
   const [optimisticUserMessage, setOptimisticUserMessage] = React.useState<UIMessage | null>(null);
   const [isCreatingThread, setIsCreatingThread] = React.useState(false);
@@ -126,29 +130,27 @@ export function ChatView({
     window.localStorage.setItem(MODEL_STORAGE_KEY, model);
   }, [model]);
 
-  const activeThreadId = threadId ?? "pending";
-  const threadIdRef = React.useRef(activeThreadId);
+  // Generated once and never changed for this component's lifetime, so
+  // `useChat`'s `id` (and thus its internal message cache) is stable across
+  // the "blank chat -> first message -> persisted thread" transition. Real
+  // navigations to a *different* thread remount ChatView (new initial
+  // state), which is correct — that's the only case where this should change.
+  const [chatId] = React.useState(() => threadId ?? nanoid());
+  const [hasPersistedThread, setHasPersistedThread] = React.useState(() => Boolean(threadId));
 
   React.useEffect(() => {
-    threadIdRef.current = activeThreadId;
-  }, [activeThreadId]);
+    setActiveThreadId(chatId);
+    return () => setActiveThreadId(null);
+  }, [chatId, setActiveThreadId]);
 
   const { messages, sendMessage, status, error, regenerate } = useChat({
-    id: activeThreadId,
+    id: chatId,
     messages: initialMessages,
     transport: new DefaultChatTransport({
-      api: `/api/chat/${activeThreadId}`,
+      api: `/api/chat/${chatId}`,
       body: () => ({ model: modelRef.current }),
-      prepareSendMessagesRequest: ({
-        body,
-        headers,
-        credentials,
-        id,
-        messages,
-        trigger,
-        messageId,
-      }) => ({
-        api: `/api/chat/${threadIdRef.current}`,
+      prepareSendMessagesRequest: ({ body, headers, credentials, id, messages, trigger, messageId }) => ({
+        api: `/api/chat/${chatId}`,
         body: { ...body, id, messages, trigger, messageId },
         headers,
         credentials,
@@ -169,20 +171,20 @@ export function ChatView({
       }
     }
 
-    let targetThreadId = threadId;
-    if (!targetThreadId) {
+    if (!hasPersistedThread) {
       setOptimisticUserMessage(
         buildOptimisticUserMessage(message.text, message.files as FileUIPart[])
       );
       setIsCreatingThread(true);
       try {
-        const created = await createConversation.mutateAsync();
-        targetThreadId = created.id;
-        threadIdRef.current = targetThreadId;
-        router.push(`/chat/${targetThreadId}`);
+        await createConversation.mutateAsync({ threadId: chatId, personaId: persona?.id });
+        const canonicalPath = persona ? `/characters/${persona.id}/${chatId}` : `/chat/${chatId}`;
+        window.history.replaceState(null, "", canonicalPath);
+        setHasPersistedThread(true);
       } catch {
         toast.error("Couldn't start a new conversation. Try again.");
         setIsCreatingThread(false);
+        setOptimisticUserMessage(null);
         return;
       }
       setIsCreatingThread(false);
@@ -194,12 +196,15 @@ export function ChatView({
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-4">
+      {persona && (
+        <PersonaHeader description={persona.tagline} icon={persona.icon} name={persona.name} />
+      )}
       <Conversation>
         <ConversationContent>
           {messages.length === 0 && !optimisticUserMessage ? (
             <ConversationEmptyState
-              description="Ask anything — switch models any time from the composer."
-              title="Start a conversation"
+              description={persona ? persona.description : "Ask anything — switch models any time from the composer."}
+              title={persona ? `Chat with ${persona.name}` : "Start a conversation"}
             />
           ) : (
             <>
@@ -223,7 +228,7 @@ export function ChatView({
                     )}
                 </Message>
               ))}
-              {(status === "submitted" || status === "streaming") && (
+              {(status === "submitted" || status === "streaming" || isCreatingThread) && (
                 <Message from="assistant" key="assistant-loading">
                   <MessageContent>
                     <div className="flex items-center gap-2 text-muted-foreground text-sm">
@@ -239,7 +244,7 @@ export function ChatView({
                         />
                         <span className="relative inline-flex size-2 rounded-full bg-primary" />
                       </span>
-                      {status === "submitted" ? "Thinking…" : "Generating…"}
+                      {isCreatingThread || status === "submitted" ? "Thinking…" : "Generating…"}
                     </div>
                   </MessageContent>
                 </Message>
