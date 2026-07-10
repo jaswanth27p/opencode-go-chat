@@ -11,6 +11,7 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { requireUser } from "@/lib/session";
 import { mastra } from "@/mastra";
 import { chatBodySchema } from "@/lib/validations/chat";
+import { resolveAgentId, getThreadPersonaId } from "@/mastra/agent-resolver";
 import {
   DEFAULT_MODEL,
   getModel,
@@ -58,15 +59,15 @@ export async function POST(
   }
   const { threadId } = await params;
 
-  const agent = mastra.getAgentById("assistant-agent");
-  const memory = await agent.getMemory();
-  if (!memory) {
+  const registryAgent = mastra.getAgentById("assistant-agent");
+  const registryMemory = await registryAgent.getMemory();
+  if (!registryMemory) {
     return NextResponse.json({ error: "Memory not configured" }, { status: 500 });
   }
 
   let thread;
   try {
-    thread = await memory.getThreadById({ threadId });
+    thread = await registryMemory.getThreadById({ threadId });
   } catch (error) {
     console.error("[chat] Failed to load thread", error);
     return NextResponse.json(
@@ -77,6 +78,8 @@ export async function POST(
   if (!thread || thread.resourceId !== user.id) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
+
+  const agentId = resolveAgentId(getThreadPersonaId(thread));
 
   const body = await req.json();
   const parseResult = chatBodySchema.safeParse(body);
@@ -144,7 +147,7 @@ export async function POST(
   // argument and its return value cross the mismatched boundary.
   const chatStream = (await handleChatStream({
     mastra,
-    agentId: "assistant-agent",
+    agentId,
     params: {
       messages: sanitizedMessages,
       memory: { thread: threadId, resource: user.id },
